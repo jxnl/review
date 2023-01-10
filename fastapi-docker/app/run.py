@@ -1,3 +1,4 @@
+from typing import List
 from fastapi import FastAPI
 from pydantic import BaseModel
 
@@ -10,15 +11,28 @@ class Client(BaseModel):
     age: int
 
 
-def determanistic_age_from_client_id(client_id: int) -> int:
+def client_age(client_id: int) -> int:
     return client_id % 100
 
 
 @app.get("/client/{client_id}", response_model=Client)
 def get_client(client_id: int) -> Client:
-    return Client(client_id=client_id, age=determanistic_age_from_client_id(client_id))
+    return Client(client_id=client_id, age=client_age(client_id))
 
 
-@app.post("/client/", response_model=Client)
-def post_client(client_id: int) -> Client:
-    return Client(client_id=client_id, age=determanistic_age_from_client_id(client_id))
+class MultiIdRequest(BaseModel):
+    ids: List[int]
+
+
+class MultipleClients(BaseModel):
+    clients: List[Client]
+
+
+@app.post("/clients/", response_model=MultipleClients)
+def post_client(request: MultiIdRequest) -> MultipleClients:
+    return MultipleClients(
+        clients=[
+            Client(client_id=client_id, age=client_age(client_id))
+            for client_id in request.ids
+        ]
+    )
