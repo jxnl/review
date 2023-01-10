@@ -21,7 +21,7 @@ def get_client(client_id: int) -> Client:
 
 
 class MultiIdRequest(BaseModel):
-    ids: List[int]
+    client_ids: List[int]
 
 
 class MultipleClients(BaseModel):
@@ -33,6 +33,6 @@ def post_client(request: MultiIdRequest) -> MultipleClients:
     return MultipleClients(
         clients=[
             Client(client_id=client_id, age=client_age(client_id))
-            for client_id in request.ids
+            for client_id in request.client_ids
         ]
     )
