@@ -43,5 +43,5 @@ def echo_message(message):
     bot.reply_to(message, message.text)
 
 
-bot.remove_webhook()
-bot.set_webhook(url="https://learning-jxnl.vercel.app/webhook")
+# bot.remove_webhook()
+# bot.set_webhook(url="https://learning-zeta.vercel.app")
