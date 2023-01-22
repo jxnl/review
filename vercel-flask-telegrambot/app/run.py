@@ -75,16 +75,20 @@ def webhook():
 def send_welcome(message):
     logger.info(f"Welcome message to {message.from_user.first_name}")
     bot.reply_to(
-        message,
-        ("Hi there, I am EchoBot.\n" "I am here to echo your kind words back to you."),
+        message, """
+        Welcome to the memo bot. 
+        
+        To save a message, use the command /memo followed by your message.
+        To delete a message, use the command /delete_memo followed by the message id.
+        """
     )
     logger.info("Welcome message sent")
 
 
-@bot.message_handler(commands=["save_memo"], content_types=["text"])
+@bot.message_handler(commands=["memo"], content_types=["text"])
 def save_message(message):
     user_id = message.from_user.id
-    user_msg = message.text
+    user_msg = message.text.split(" ", 1)[1]
     message_id = db.save_note(telegram_user_id=user_id, message_text=user_msg)
     bot.reply_to(message, f"Saved message {message_id} to database")
 
