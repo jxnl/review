@@ -126,7 +126,7 @@ def save_summary(telegram_user_id, summary):
         return cursor.lastrowid
 
 
-def save_note(telegram_user_id,  from_message_id, message_text, processed_msg=None):
+def save_note(telegram_user_id, from_message_id, message_text, processed_msg=None):
     """
     Save into table `notes` with schema:
 
@@ -145,7 +145,7 @@ def save_note(telegram_user_id,  from_message_id, message_text, processed_msg=No
     message_text = str(message_text)
     processed_msg = str(processed_msg) if processed_msg else None
 
-    # check if message_id already exsts 
+    # check if message_id already exsts
     with connection.cursor() as cursor:
         sql = "SELECT id FROM notes WHERE telegram_user_id=%s AND message_id=%s"
         cursor.execute(sql, (telegram_user_id, from_message_id))
@@ -156,7 +156,9 @@ def save_note(telegram_user_id,  from_message_id, message_text, processed_msg=No
             logger.info(f"Message {message_id[0]} already exists in database")
         else:
             sql = "INSERT INTO notes (telegram_user_id, message_id, msg, processed_msg) VALUES (%s, %s, %s, %s)"
-            cursor.execute(sql, (telegram_user_id, from_message_id, message_text, processed_msg))
+            cursor.execute(
+                sql, (telegram_user_id, from_message_id, message_text, processed_msg)
+            )
             connection.commit()
             logger.info(f"Saved message {from_message_id} to database")
             note_id = cursor.lastrowid

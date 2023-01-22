@@ -21,6 +21,11 @@ ME = 5072074832
 
 
 @app.route("/")
+def hello():
+    return {"status": "ok"}
+
+
+@app.route("/memos")
 def return_memos():
     """
     Returns the number of notes saved in the data from the database for each telegram user
@@ -88,8 +93,12 @@ def save_message(message):
     user_id = message.from_user.id
     message_id = message.message_id
     user_msg = message.text.split(" ", 1)[1]
-    message_id, summary_id = db.save_note(telegram_user_id=user_id, from_message_id=message_id, message_text=user_msg)
-    bot.reply_to(message, f"Saved message {message_id} to database and summary {summary_id}")
+    message_id, summary_id = db.save_note(
+        telegram_user_id=user_id, from_message_id=message_id, message_text=user_msg
+    )
+    bot.reply_to(
+        message, f"Saved message {message_id} to database and summary {summary_id}"
+    )
 
 
 @bot.message_handler(commands=["delete_memo"], content_types=["text"])
@@ -108,8 +117,13 @@ def delete_message(message):
 if __name__ == "__main__":
     from loguru import logger
 
+    polling = False
+
     logger.info("Starting bot")
     bot.remove_webhook()
-    bot.set_webhook(url="https://learning-jxnl.vercel.app/webhook")
-    # bot.infinity_polling()
-    logger.info("Set webhook")
+
+    if polling:
+        bot.infinity_polling()
+    else:
+        bot.set_webhook(url="https://learning-jxnl.vercel.app/webhook")
+        logger.info("Set webhook")
