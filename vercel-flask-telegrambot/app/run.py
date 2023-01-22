@@ -50,7 +50,10 @@ def return_memos():
         summaries[day] = summary
 
     return {
-        "memos": [{"date": k, "notes": v, "summary": summaries[day]} for (k, v) in notes.items()]
+        "memos": [
+            {"date": k, "notes": v, "summary": summaries[day]}
+            for (k, v) in notes.items()
+        ]
     }
 
 
@@ -94,7 +97,7 @@ def delete_message(message):
 
     if message_id:
         bot.reply_to(message, f"Deleted message {message_id} from database")
-        return 
+        return
 
     bot.reply_to(message, f"Message not found or not owned by user")
 

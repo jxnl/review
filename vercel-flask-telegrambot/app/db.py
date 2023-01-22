@@ -37,10 +37,11 @@ CREATE TABLE `summaries` (
 ) ENGINE InnoDB,
   """
 
+
 def fetch_notes():
     """
     Fetches the notes from the database, and returns a list of tuples
-    
+
     Returns:
         list: [(date, summary, note), (date, summary, note)]
     """
@@ -59,7 +60,7 @@ def fetch_notes():
         """
         cursor.execute(sql)
         notes_objs = cursor.fetchall()
-    
+
     logger.info("Fetched {} notes from database".format(len(notes_objs)))
     return notes_objs
 
@@ -109,6 +110,6 @@ def delete_note(telegram_user_id, message_id):
         except MySQLdb.Error as e:
             logger.error("Error deleting message from database: {}".format(e))
             return None
-    
+
     logger.info(f"Deleted message {message_id} from database")
     return message_id
