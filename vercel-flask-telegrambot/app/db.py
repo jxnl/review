@@ -2,20 +2,20 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-import MySQLdb
+import pymysql.cursors
 import os
 
 from logging import getLogger
 
 logger = getLogger(__name__)
 
-connection = MySQLdb.connect(
+
+connection = pymysql.connect(
     host=os.getenv("HOST"),
     user=os.getenv("USERNAME"),
     passwd=os.getenv("PASSWORD"),
     db=os.getenv("DATABASE"),
-    ssl_mode="VERIFY_IDENTITY",
-    ssl={"ca": "/etc/ssl/cert.pem"},
+    ssl={"ca": os.getenv("PLANETSCALE_SSL_CERT_PATH")},
 )
 
 table_schems = """
