@@ -17,13 +17,10 @@ app = flask.Flask(__name__)
 
 bot = telebot.TeleBot(os.environ["TELEGRAM_BOT_TOKEN"], threaded=False)
 
+ME = 5072074832
+
 
 @app.route("/")
-def read_root():
-    return {"status": "ok", "bot": "active"}
-
-
-@app.route("/memos")
 def return_memos():
     """
     Returns the number of notes saved in the data from the database for each telegram user
@@ -75,12 +72,13 @@ def webhook():
 def send_welcome(message):
     logger.info(f"Welcome message to {message.from_user.first_name}")
     bot.reply_to(
-        message, """
+        message,
+        """
         Welcome to the memo bot. 
         
         To save a message, use the command /memo followed by your message.
         To delete a message, use the command /delete_memo followed by the message id.
-        """
+        """,
     )
     logger.info("Welcome message sent")
 
@@ -88,9 +86,10 @@ def send_welcome(message):
 @bot.message_handler(commands=["memo"], content_types=["text"])
 def save_message(message):
     user_id = message.from_user.id
+    message_id = message.message_id
     user_msg = message.text.split(" ", 1)[1]
-    message_id = db.save_note(telegram_user_id=user_id, message_text=user_msg)
-    bot.reply_to(message, f"Saved message {message_id} to database")
+    message_id, summary_id = db.save_note(telegram_user_id=user_id, from_message_id=message_id, message_text=user_msg)
+    bot.reply_to(message, f"Saved message {message_id} to database and summary {summary_id}")
 
 
 @bot.message_handler(commands=["delete_memo"], content_types=["text"])
