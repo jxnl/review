@@ -26,18 +26,13 @@ def generate_summary(note_objs):
 
     prompt = f"""
     You are an AI assistant being presented with a list of notes the I've written down throughout the day.
-    Take these notes and generate a summary of thoughts the user has had throughout the day. Not all notes are related
-    Keep the summary brief and to the point. Maintain the same tone, tense, and style as the user's notes. 
-    
-    Write this in the first person 
-    
-    Example:    
-    Today I thought about ... Also I've been doing ...
+    Take these notes and generate themes for the thoughts the user has had throughout the day. Not all notes are related
+    Take those themes and generated an interesting title for the day.
 
     Notes:
     {notes}
     
-    Summary:
+    Title:
     """
 
     logger.info(f"Sending prompt to GPT-3: {prompt}")
