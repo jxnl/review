@@ -26,8 +26,7 @@ def generate_summary(note_objs):
 
     prompt = f"""
     You are an AI assistant being presented with a list of notes the I've written down throughout the day.
-    Take these notes and generate themes for the thoughts the user has had throughout the day. Not all notes are related
-    Take those themes and generated an interesting title for the day.
+    Not all notes are related. Take those notes and generate an interesting title for the day.
 
     Notes:
     {notes}
