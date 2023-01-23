@@ -25,8 +25,8 @@ def hello():
     return {"status": "ok"}
 
 
-@app.route("/memos")
-def return_memos():
+@app.route("/memos/<month>")
+def return_memos(month:int):
     """
     Returns the number of notes saved in the data from the database for each telegram user
 
@@ -41,9 +41,12 @@ def return_memos():
             ]
         }
     """
+    month = int(month)
+
+    note_tuples = db.fetch_notes(month)
+
     notes = collections.defaultdict(list)
     summaries = dict()
-    note_tuples = db.fetch_notes()
 
     for day, summary, note_str in note_tuples:
         # format date to YYYY-MM-DD and collect into notes

@@ -40,15 +40,20 @@ CREATE TABLE `summaries` (
   """
 
 
-def fetch_notes():
+def fetch_notes(month=None):
     """
     Fetches the notes from the database, and returns a list of tuples
+
+    Args:
+        month (int, optional): The month to fetch notes for. Defaults to None.
 
     Returns:
         list: [(date, summary, note), (date, summary, note)]
     """
+
     with connection.cursor() as cursor:
-        sql = """
+        month_match_str = "" if not month else f"AND MONTH(created_at) = {month}"
+        sql = f"""
         SELECT 
             DATE(created_at) as day,
             summary,
@@ -59,6 +64,7 @@ def fetch_notes():
                 AND DATE(notes.created_at) = summaries.date
         WHERE 
             notes.telegram_user_id = 5072074832 
+            {month_match_str}
         ORDER BY 1 DESC
         """
         cursor.execute(sql)
