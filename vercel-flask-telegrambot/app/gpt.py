@@ -8,6 +8,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+openai.api_key = os.environ["OPENAI_TOKEN"]
 
 def get_gpt_response(prompt):
     """
@@ -24,9 +25,14 @@ def generate_summary(note_objs):
     notes = "\n".join(notes)
 
     prompt = f"""
-    You are an AI assistant being presented with a list of notes the user has written down throughout the day.
-    Take these notes and generate a summary of thoughts the user has had throughout the day. Keep the summary brief and to the point.
-    Maintain the same tone, tense, and style as the user's notes.
+    You are an AI assistant being presented with a list of notes the I've written down throughout the day.
+    Take these notes and generate a summary of thoughts the user has had throughout the day. Not all notes are related
+    Keep the summary brief and to the point. Maintain the same tone, tense, and style as the user's notes. 
+    
+    Write this in the first person 
+    
+    Example:    
+    Today I thought about ... Also I've been doing ...
 
     Notes:
     {notes}

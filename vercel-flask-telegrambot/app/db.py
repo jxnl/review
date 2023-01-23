@@ -154,7 +154,7 @@ def save_note(telegram_user_id, from_message_id, message_text, processed_msg=Non
 
         # if it does not exist then save it
         if note_id:
-            logger.info(f"Message {message_id[0]} already exists in database")
+            logger.info(f"Message {note_id[0]} already exists in database")
         else:
             sql = "INSERT INTO notes (telegram_user_id, message_id, msg, processed_msg) VALUES (%s, %s, %s, %s)"
             cursor.execute(
