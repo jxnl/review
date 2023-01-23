@@ -88,7 +88,7 @@ def send_welcome(message):
     logger.info("Welcome message sent")
 
 
-@bot.message_handler(commands=["memo"], content_types=["text"])
+@bot.message_handler(func=lambda: True, content_types=["text"])
 def save_message(message):
     user_id = message.from_user.id
     message_id = message.message_id
