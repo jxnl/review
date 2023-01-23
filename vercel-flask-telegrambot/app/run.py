@@ -90,11 +90,11 @@ def send_welcome(message):
     logger.info("Welcome message sent")
 
 
-@bot.message_handler(func=lambda: True, content_types=["text"])
+@bot.message_handler(func=lambda message: True, content_types=["text"])
 def save_message(message):
     user_id = message.from_user.id
     message_id = message.message_id
-    user_msg = message.text.split(" ", 1)[1]
+    user_msg = message.text
     message_id, summary_id = db.save_note(
         telegram_user_id=user_id, from_message_id=message_id, message_text=user_msg
     )
