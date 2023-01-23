@@ -5,7 +5,6 @@ load_dotenv()
 import os
 import openai
 import logging
-import datetime
 
 logger = logging.getLogger(__name__)
 
