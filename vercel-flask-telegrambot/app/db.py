@@ -59,6 +59,7 @@ def fetch_notes():
                 AND DATE(notes.created_at) = summaries.date
         WHERE 
             notes.telegram_user_id = 5072074832 
+        ORDER BY 1 DESC
         """
         cursor.execute(sql)
         notes_objs = cursor.fetchall()

@@ -51,10 +51,12 @@ def return_memos():
         notes[day].append(note_str)
         summaries[day] = summary
 
+    ordered_by_date = sorted(notes.items(), reverse=True)
+
     return {
         "memos": [
-            {"date": k, "notes": v, "summary": summaries[day]}
-            for (k, v) in notes.items()
+            {"date": day, "notes": notes, "summary": summaries[day]}
+            for (day, notes) in ordered_by_date
         ]
     }
 
