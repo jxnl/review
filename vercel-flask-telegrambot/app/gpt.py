@@ -37,7 +37,7 @@ def generate_summary(note_objs):
     logger.info(f"Sending prompt to GPT-3: {prompt}")
     # Create a GPT-3 session
     gpt3_session = openai.Completion.create(
-        engine="text-davinci-003",
+        engine="text-curie-001",
         prompt=prompt,
         temperature=0.8,
         max_tokens=2024,
