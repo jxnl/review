@@ -94,18 +94,37 @@ def send_welcome(message):
     logger.info("Welcome message sent")
 
 
+@bot.message_handler(commands=["delete_memo"], content_types=["text"])
+def delete_message(message):
+    user_id = message.from_user.id
+    message_id = message.text.split(" ")[1]
+    message_id = db.delete_note(telegram_user_id=user_id, message_id=message_id)
+
+    if message_id:
+        bot.reply_to(message, f"Deleted message {message_id} from database")
+        return
+
+    bot.reply_to(message, f"Message not found or not owned by user")
+
+
 @bot.message_handler(func=lambda message: True, content_types=["text"])
 def save_message(message):
-    logger.info(f"Received message from user {message.from_user.id}")
     user_id = message.from_user.id
     message_id = message.message_id
     user_msg = message.text
-    message_id, summary_id = db.save_note(
+    message_id = db.save_note(
         telegram_user_id=user_id, from_message_id=message_id, message_text=user_msg
     )
     bot.reply_to(
-        message, f"Saved message {message_id} to database and summary {summary_id}"
+        message, f"Saved message {message_id} to database."
     )
+    try:
+        summary = db.make_summary(user_id)
+        summary_id = db.save_summary(user_id, summary)
+        bot.reply_to(message, f"Saved summary {summary_id} to database")
+    except Exception as e:
+        logger.error(e)
+        bot.reply_to(message, f"Error creating summary {e}")
 
 
 @bot.message_handler(content_types=["voice"])
@@ -122,17 +141,6 @@ def transcribe(message):
     bot.reply_to(message, transcription["text"])
 
 
-@bot.message_handler(commands=["delete_memo"], content_types=["text"])
-def delete_message(message):
-    user_id = message.from_user.id
-    message_id = message.text.split(" ")[1]
-    message_id = db.delete_note(telegram_user_id=user_id, message_id=message_id)
-
-    if message_id:
-        bot.reply_to(message, f"Deleted message {message_id} from database")
-        return
-
-    bot.reply_to(message, f"Message not found or not owned by user")
 
 
 if __name__ == "__main__":
