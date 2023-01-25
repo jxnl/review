@@ -5,6 +5,7 @@ load_dotenv()
 import os
 import db
 import collections
+import requests
 
 import flask
 import telebot
@@ -95,6 +96,7 @@ def send_welcome(message):
 
 @bot.message_handler(func=lambda message: True, content_types=["text"])
 def save_message(message):
+    logger.info(f"Received message from user {message.from_user.id}")
     user_id = message.from_user.id
     message_id = message.message_id
     user_msg = message.text
@@ -104,6 +106,20 @@ def save_message(message):
     bot.reply_to(
         message, f"Saved message {message_id} to database and summary {summary_id}"
     )
+
+
+@bot.message_handler(content_types=["voice"])
+def transcribe(message):
+    file_id = message.voice.file_id
+    logger.info(f"Received voice message with file_id: {file_id}")
+    transcription = requests.get("https://jxnl--telegram-transcribe.modal.run/", params={"file_id": file_id})
+
+    if transcription.status_code == 200:
+        transcription = transcription.json()
+
+        logger.info("Transcription successful {transcription}")
+
+    bot.reply_to(message, transcription["text"])
 
 
 @bot.message_handler(commands=["delete_memo"], content_types=["text"])
