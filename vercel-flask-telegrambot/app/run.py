@@ -120,8 +120,7 @@ def save_message(message):
     )
     try:
         summary = db.make_summary(user_id)
-        summary_id = db.save_summary(user_id, summary)
-        bot.reply_to(message, f"Saved summary {summary_id} to database")
+        db.save_summary(user_id, summary)
     except Exception as e:
         logger.error(e)
         bot.reply_to(message, f"Error creating summary {e}")
