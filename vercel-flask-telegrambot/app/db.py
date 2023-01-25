@@ -170,11 +170,8 @@ def save_note(telegram_user_id, from_message_id, message_text, processed_msg=Non
             logger.info(f"Saved message {from_message_id} to database")
             note_id = cursor.lastrowid
 
-    summary = make_summary(telegram_user_id)
-    summary_id = save_summary(telegram_user_id, summary)
-
-    logger.info(f"Saved note {note_id} to database and updated summary")
-    return note_id, summary_id
+    logger.info(f"Saved note {note_id} to database")
+    return note_id
 
 
 def delete_note(telegram_user_id, message_id):
