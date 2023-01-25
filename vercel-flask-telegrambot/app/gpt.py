@@ -37,15 +37,15 @@ def generate_summary(note_objs):
     logger.info(f"Sending prompt to GPT-3: {prompt}")
     # Create a GPT-3 session
     gpt3_session = openai.Completion.create(
-        engine="text-curie-001",
+        engine="text-davinci-003",
         prompt=prompt,
         temperature=0.8,
-        max_tokens=2024,
+        max_tokens=1000,
         n=1,
     )
 
     # Generate a response to the user-provided message
-    response = gpt3_session.choices[0].text  # type: ignore
+    response = gpt3_session.choices[0].text.strip()  # type: ignore
 
     # Process response
     logger.info(f"Got response from GPT-3: {response}")
