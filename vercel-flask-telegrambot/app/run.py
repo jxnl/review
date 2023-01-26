@@ -153,5 +153,5 @@ if __name__ == "__main__":
     if polling:
         bot.infinity_polling()
     else:
-        bot.set_webhook(url="https://learning-jxnl.vercel.app/webhook")
+        bot.set_webhook(url="https://telebot-nine-lemon.vercel.app/webhook")
         logger.info("Set webhook")
