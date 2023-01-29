@@ -1,0 +1,7 @@
+langchain
+wikipedia
+python-dotenv
+# optional dependencies based on each bot
+pytelegrambotapi
+slack-bolt
+discord-py
