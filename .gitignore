@@ -130,3 +130,4 @@ dmypy.json
 
 app/*
 .vscode/settings.json
+langchain-sandbox/
