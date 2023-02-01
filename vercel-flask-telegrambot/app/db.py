@@ -40,58 +40,32 @@ CREATE TABLE `summaries` (
   """
 
 
-def fetch_notes(month=None):
-    """
-    Fetches the notes from the database, and returns a list of tuples
+def make_summary(telegram_user_id, date=None):
 
-    Args:
-        month (int, optional): The month to fetch notes for. Defaults to None.
-
-    Returns:
-        list: [(date, summary, note), (date, summary, note)]
-    """
+    if date is None:
+        date = "DATE(NOW())"
+    else:
+        date = f"'{date}'"
 
     with connection.cursor() as cursor:
-        month_match_str = "" if not month else f"AND MONTH(created_at) = {month}"
         sql = f"""
         SELECT 
-            DATE(created_at) as day,
-            summary,
-            msg as memo
+            id, msg
         FROM 
             notes 
-            JOIN summaries ON notes.telegram_user_id = summaries.telegram_user_id 
-                AND DATE(notes.created_at) = summaries.date
         WHERE 
-            notes.telegram_user_id = 5072074832 
-            {month_match_str}
-        ORDER BY 1 DESC
+            telegram_user_id = {telegram_user_id}
+            AND DATE(created_at) = {date}
         """
         cursor.execute(sql)
         notes_objs = cursor.fetchall()
-
-    logger.info("Fetched {} notes from database".format(len(notes_objs)))
-    return notes_objs
-
-
-def make_summary(telegram_user_id):
-    with connection.cursor() as cursor:
-        sql = """
-        SELECT 
-            msg
-        FROM 
-            notes 
-        WHERE 
-            telegram_user_id = %s 
-            AND DATE(created_at) = DATE(NOW())
-        """
-        cursor.execute(sql, (telegram_user_id))
-        notes_objs = cursor.fetchall()
-    summary = gpt.generate_summary(notes_objs)
-    return summary
+        ids = [note[0] for note in notes_objs]
+        msgs = [note[1] for note in notes_objs]
+    summary = gpt.generate_summary(msgs)
+    return summary, ids
 
 
-def save_summary(telegram_user_id, summary):
+def save_summary(telegram_user_id, summary, ids):
     # check if there is already a summary for this user on this day
     with connection.cursor() as cursor:
         sql = """
@@ -116,21 +90,23 @@ def save_summary(telegram_user_id, summary):
 
             sql = "UPDATE summaries SET summary=%s WHERE id=%s"
             cursor.execute(sql, (summary, summary_id))
-            connection.commit()
             logger.info(
                 f"Updated summary for {telegram_user_id} on {datetime.date.today()}"
             )
-            return summary_id
         else:
             # create new summary
             sql = "INSERT INTO summaries (telegram_user_id, summary, date) VALUES (%s, %s, DATE(NOW()))"
             cursor.execute(sql, (telegram_user_id, summary))
-            connection.commit()
             logger.info(
                 f"Created new summary for {telegram_user_id} on {datetime.date.today()}"
             )
+            summary_id = cursor.lastrowid
 
-        return cursor.lastrowid
+        # update notes summary_id with the new summary
+        sql = "UPDATE notes SET summary_id=%s WHERE id IN %s"
+        cursor.execute(sql, (summary_id, tuple(ids)))
+        connection.commit()
+    return summary_id, ids
 
 
 def save_note(telegram_user_id, from_message_id, message_text, processed_msg=None):

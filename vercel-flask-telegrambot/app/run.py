@@ -26,46 +26,6 @@ def hello():
     return {"status": "ok"}
 
 
-@app.route("/memos/<month>")
-def return_memos(month:int):
-    """
-    Returns the number of notes saved in the data from the database for each telegram user
-
-    Returns:
-        dict: {
-            "memos": [
-                "date": "2020-01-01",
-                "notes": [
-                    "note1", "note2"
-                ]
-                "summary": None
-            ]
-        }
-    """
-    month = int(month)
-
-    note_tuples = db.fetch_notes(month)
-
-    notes = collections.defaultdict(list)
-    summaries = dict()
-
-    for day, summary, note_str in note_tuples:
-        # format date to YYYY-MM-DD and collect into notes
-        day = day.strftime("%Y-%m-%d")
-        notes[day].append(note_str)
-        summaries[day] = summary
-
-    ordered_by_date = sorted(notes.items(), reverse=True)
-
-    return {
-        "memos": [
-            {"date": day, "notes": notes, "summary": summaries[day]}
-            for (day, notes) in ordered_by_date
-        ]
-    }
-
-
-# Process webhook calls
 @app.route("/webhook", methods=["POST"])
 def webhook():
     logger.info("Webhook called")
@@ -94,6 +54,7 @@ def send_welcome(message):
     logger.info("Welcome message sent")
 
 
+# Handle '/delete_memo'
 @bot.message_handler(commands=["delete_memo"], content_types=["text"])
 def delete_message(message):
     user_id = message.from_user.id
@@ -107,6 +68,21 @@ def delete_message(message):
     bot.reply_to(message, f"Message not found or not owned by user")
 
 
+@bot.message_handler(commands=["summary"])
+def send_summary(message):
+    user_id = message.from_user.id
+    date = message.text.split(" ")[1]
+
+    try:
+        summary_str, ids = db.make_summary(user_id, date)
+        summary_id, ids = db.save_summary(user_id, summary_str, ids)
+        bot.reply_to(message, f"Saved summary {summary_id} to database for notes {ids}")
+        bot.reply_to(message, summary_str)
+    except Exception as e:
+        logger.error(e)
+        bot.reply_to(message, f"Error creating summary {e}")
+
+
 @bot.message_handler(func=lambda message: True, content_types=["text"])
 def save_message(message):
     user_id = message.from_user.id
@@ -115,12 +91,11 @@ def save_message(message):
     message_id = db.save_note(
         telegram_user_id=user_id, from_message_id=message_id, message_text=user_msg
     )
-    bot.reply_to(
-        message, f"Saved message {message_id} to database."
-    )
+    bot.reply_to(message, f"Saved message {message_id} to database.")
     try:
-        summary = db.make_summary(user_id)
-        db.save_summary(user_id, summary)
+        summary_str, ids = db.make_summary(user_id)
+        summary_id, ids = db.save_summary(user_id, summary_str, ids)
+        bot.reply_to(message, f"Saved summary {summary_id} to database for notes {ids}")
     except Exception as e:
         logger.error(e)
         bot.reply_to(message, f"Error creating summary {e}")
@@ -130,7 +105,9 @@ def save_message(message):
 def transcribe(message):
     file_id = message.voice.file_id
     logger.info(f"Received voice message with file_id: {file_id}")
-    transcription = requests.get("https://jxnl--telegram-transcribe.modal.run/", params={"file_id": file_id})
+    transcription = requests.get(
+        "https://jxnl--telegram-transcribe.modal.run/", params={"file_id": file_id}
+    )
 
     if transcription.status_code == 200:
         transcription = transcription.json()
@@ -138,8 +115,6 @@ def transcribe(message):
         logger.info("Transcription successful {transcription}")
 
     bot.reply_to(message, transcription["text"])
-
-
 
 
 if __name__ == "__main__":

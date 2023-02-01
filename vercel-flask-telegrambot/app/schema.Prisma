@@ -1,0 +1,32 @@
+generator client {
+  provider             = "prisma-client-py"
+  interface            = "sync"
+  recursive_type_depth = "5"
+}
+
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+model notes {
+  id               Int        @id @default(autoincrement())
+  created_at       DateTime   @default(now()) @db.Timestamp(0)
+  msg              String     @db.Text
+  processed_msg    String?    @db.Text
+  message_id       BigInt?
+  summary_id       Int?
+  telegram_user_id BigInt
+  summary          summaries? @relation(fields: [summary_id], references: [id])
+  
+  @@index([summary_id])
+}
+
+model summaries {
+  id               Int      @id @default(autoincrement())
+  summary          String   @db.Text
+  date             DateTime @db.Date
+  telegram_user_id BigInt
+  notes            notes[]
+}

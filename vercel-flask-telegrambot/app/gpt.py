@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 
 openai.api_key = os.environ["OPENAI_TOKEN"]
 
+
 def get_gpt_response(prompt):
     """
     Get a response from GPT-3
@@ -17,11 +18,11 @@ def get_gpt_response(prompt):
     openai.api_key = os.environ["OPENAI_API_KEY"]
 
 
-def generate_summary(note_objs):
+def generate_summary(notes):
     # Define the prompt that will be sent to GPT-3
 
     # join all notes into a single string as a set of bullet points
-    notes = ["* " + note[0] for note in note_objs]
+    notes = ["* " + note for note in notes]
     notes = "\n".join(notes)
 
     prompt = f"""
