@@ -4,18 +4,17 @@ load_dotenv()
 
 import os
 import db
-import collections
+
 import requests
 
 import flask
 import telebot
+
 from logging import getLogger
 
 logger = getLogger(__name__)
 
-
 app = flask.Flask(__name__)
-
 bot = telebot.TeleBot(os.environ["TELEGRAM_BOT_TOKEN"], threaded=False)
 
 ME = 5072074832
@@ -75,7 +74,7 @@ def send_summary(message):
 
     try:
         summary_str, ids = db.make_summary(user_id, date)
-        summary_id, ids = db.save_summary(user_id, summary_str, ids)
+        summary_id, ids = db.save_summary(user_id, summary_str, ids, date)
         bot.reply_to(message, f"Saved summary {summary_id} to database for notes {ids}")
         bot.reply_to(message, summary_str)
     except Exception as e:

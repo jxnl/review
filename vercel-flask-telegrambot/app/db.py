@@ -1,9 +1,10 @@
-import datetime
 from dotenv import load_dotenv
 
 load_dotenv()
 
+import datetime
 import pymysql.cursors
+
 import os
 import gpt
 
@@ -37,7 +38,7 @@ CREATE TABLE `summaries` (
 	`date` date NOT NULL,
 	PRIMARY KEY (`id`)
 ) ENGINE InnoDB,
-  """
+"""
 
 
 def make_summary(telegram_user_id, date=None):
@@ -46,6 +47,8 @@ def make_summary(telegram_user_id, date=None):
         date = "DATE(NOW())"
     else:
         date = f"'{date}'"
+
+    logger.info(f"Make summary for {telegram_user_id} on {date}")
 
     with connection.cursor() as cursor:
         sql = f"""
@@ -65,19 +68,25 @@ def make_summary(telegram_user_id, date=None):
     return summary, ids
 
 
-def save_summary(telegram_user_id, summary, ids):
+def save_summary(telegram_user_id, summary, ids, date=None):
     # check if there is already a summary for this user on this day
+
+    if date is None:
+        date = "DATE(NOW())"
+    else:
+        date = f"'{date}'"
+
     with connection.cursor() as cursor:
-        sql = """
+        sql = f"""
         SELECT 
             id
         FROM 
             summaries 
         WHERE 
-            telegram_user_id = %s 
-            AND date = DATE(NOW())
+            telegram_user_id = {telegram_user_id} 
+            AND date = {date}
         """
-        cursor.execute(sql, (telegram_user_id))
+        cursor.execute(sql)
         summary_id = cursor.fetchone()  # returns a tuple or None if there is no summary
 
         logger.info(
