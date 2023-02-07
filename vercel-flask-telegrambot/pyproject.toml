@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "vercel-flask-telegrambot"
+version = "0.1.0"
+description = "Telegram app to use as personal assistant"
+authors = ["Jason Liu <jason@jxnl.coA>"]
+readme = "README.md"
+packages = [{include = "vercel_flask_telegrambot"}]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+flask = "^2.2.2"
+python-dotenv = "^0.21.1"
+pytelegrambotapi = "^4.9.0"
+pymysql = "^1.0.2"
+requests = "^2.28.2"
+
+[tool.poetry.group.dev.dependencies]
+black = "^22.12.0"
+pytest = "^7.2.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
