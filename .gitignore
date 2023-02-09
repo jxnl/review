@@ -131,3 +131,5 @@ dmypy.json
 app/*
 .vscode/settings.json
 langchain-sandbox/
+bjj_gpt/data/*
+.DS_Store
