@@ -12,7 +12,6 @@ openai.api_key = os.environ["OPENAI_TOKEN"]
 
 
 def generate_summary(notes):
-
     # join all notes into a single string as a set of bullet points
     notes = ["* " + note for note in notes]
     notes = "\n".join(notes)

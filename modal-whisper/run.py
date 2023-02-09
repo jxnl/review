@@ -1,24 +1,31 @@
-import modal 
+import modal
+
 
 def download_whisper():
     import whisper
+
     model = whisper.load_model("base")
-    return 
+    return
+
 
 telegram_transcribe = (
     modal.Image.debian_slim()
-        .pip_install(
-            "ffmpeg-python",
-            "openai-whisper",
-            "pyTelegramBotAPI")
-        .apt_install("ffmpeg")
-        .run_function(download_whisper)
+    .pip_install("ffmpeg-python", "openai-whisper", "pyTelegramBotAPI")
+    .apt_install("ffmpeg")
+    .run_function(download_whisper)
 )
 
-stub = modal.Stub("modal-whisper", )
+stub = modal.Stub(
+    "modal-whisper",
+)
 
 
-@stub.webhook(gpu="any", label="telegram-transcribe", image=telegram_transcribe, secret=modal.Secret.from_name("telegram"))
+@stub.webhook(
+    gpu="any",
+    label="telegram-transcribe",
+    image=telegram_transcribe,
+    secret=modal.Secret.from_name("telegram"),
+)
 def telegram_transcribe_memo(file_id):
     import telebot
     import whisper

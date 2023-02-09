@@ -42,7 +42,6 @@ CREATE TABLE `summaries` (
 
 
 def make_summary(telegram_user_id, date=None):
-
     if date is None:
         date = "DATE(NOW())"
     else:
