@@ -12,7 +12,7 @@ import modal
 stub = modal.Stub("summary")
 
 image = modal.Image.debian_slim().pip_install(
-    ["youtube-transcript-api", "openai", "fastapi"]
+    ["youtube-transcript-api", "openai", "fastapi", "sse-starlette"]
 )
 
 logger = getLogger(__name__)
@@ -55,3 +55,43 @@ async def youtube(req: SummaryPayload) -> StreamingResponse:
     )
     logger.info(f"Streaming summary for {video_id}...")
     return StreamingResponse(generator, media_type="text/plain")
+
+
+from sse_starlette import EventSourceResponse
+
+
+@stub.webhook(method="POST", image=image, keep_warm=True)
+async def youtube_sse(req: SummaryPayload) -> EventSourceResponse:
+    video_id = extract_video_id(req.url)
+    logger.info(f"Received request for {video_id}")
+
+    try:
+        text = transcribe_youtube(video_id)
+        head_text = text[:200]
+        logger.info(f"Transcript for {video_id} is {head_text}...")
+    except:
+        return EventSourceResponse(
+            status_code=404, content="Video transcript not found on youtube"
+        )
+
+    if len(text) > 3000 * 10:
+        return EventSourceResponse(
+            status_code=404,
+            content="Video transcript is too long to summarize without your own OpenAI API key.",
+        )
+
+    # this is the generator that yields the summaries
+    generator = stream_summaries_from_text(
+        complete_batch=text,
+        batch_size=req.batch_size,
+        openai_api_key=req.openai_api_key,
+        engine=req.engine,
+    )
+
+    async def event_stream():
+        async for summary in generator:
+            yield {"data": summary}
+        yield {"data": "[DONE]"}
+
+    logger.info(f"Streaming summary for {video_id}...")
+    return EventSourceResponse(event_stream(), media_type="text/plain")
