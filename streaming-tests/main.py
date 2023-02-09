@@ -60,6 +60,7 @@ async def request_handler(transcript_queue, response_queue, chunk_size=10):
 # fastapi streaming
 from fastapi import FastAPI, Request
 from fastapi.responses import StreamingResponse
+from sse_starlette.sse import EventSourceResponse
 
 app = FastAPI()
 
