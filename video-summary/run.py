@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional
-from fastapi import FastAPI
+from fastapi import FastAPI, Header
 from fastapi.responses import StreamingResponse
 from youtube import extract_video_id, transcribe_youtube
 from text_helpers import stream_summaries_from_text
@@ -21,13 +21,22 @@ logger = getLogger(__name__)
 @dataclass
 class SummaryPayload:
     url: str
-    batch_size: Optional[int] = 3000
-    openai_api_key: Optional[str] = None
-    engine: Optional[str] = "text-davinci-003"
+
+
+app = FastAPI()
 
 
 @stub.webhook(method="POST", image=image, keep_warm=True)
-async def youtube(req: SummaryPayload) -> StreamingResponse:
+@app.post("/youtube")
+async def youtube(
+    req: SummaryPayload, authorization: str = Header(None)
+) -> StreamingResponse:
+    if authorization is None or not authorization.startswith("Bearer "):
+        return StreamingResponse(
+            status_code=401, content="Authorization header is required"
+        )
+    bearer, token = authorization.split(" ")
+
     video_id = extract_video_id(req.url)
     logger.info(f"Received request for {video_id}")
 
@@ -47,12 +56,7 @@ async def youtube(req: SummaryPayload) -> StreamingResponse:
         )
 
     # this is the generator that yields the summaries
-    generator = stream_summaries_from_text(
-        complete_batch=text,
-        batch_size=req.batch_size,
-        openai_api_key=req.openai_api_key,
-        engine=req.engine,
-    )
+    generator = stream_summaries_from_text(complete_batch=text, openai_api_key=token)
     logger.info(f"Streaming summary for {video_id}...")
     return StreamingResponse(generator, media_type="text/plain")
 
@@ -61,7 +65,15 @@ from sse_starlette import EventSourceResponse
 
 
 @stub.webhook(method="POST", image=image, keep_warm=True)
-async def youtube_sse(req: SummaryPayload) -> EventSourceResponse:
+@app.post("/youtube_sse")
+async def youtube_sse(
+    req: SummaryPayload, authorization: str = Header(None)
+) -> StreamingResponse:
+    if authorization is None or not authorization.startswith("Bearer "):
+        return StreamingResponse(
+            status_code=401, content="Authorization header is required"
+        )
+    bearer, token = authorization.split(" ")
     video_id = extract_video_id(req.url)
     logger.info(f"Received request for {video_id}")
 
@@ -83,9 +95,7 @@ async def youtube_sse(req: SummaryPayload) -> EventSourceResponse:
     # this is the generator that yields the summaries
     generator = stream_summaries_from_text(
         complete_batch=text,
-        batch_size=req.batch_size,
-        openai_api_key=req.openai_api_key,
-        engine=req.engine,
+        openai_api_key=token,
     )
 
     async def event_stream():
