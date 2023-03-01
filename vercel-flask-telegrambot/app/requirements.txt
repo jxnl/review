@@ -2,4 +2,4 @@ flask
 python-dotenv
 pyTelegramBotAPI
 pymysql
-openai
+openai>=0.27.0

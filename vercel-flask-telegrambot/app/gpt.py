@@ -8,7 +8,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-openai.api_key = os.environ["OPENAI_TOKEN"]
+openai.api_key = os.environ["OPENAI_API_KEY"]
 
 
 def generate_summary(notes):
@@ -16,29 +16,28 @@ def generate_summary(notes):
     notes = ["* " + note for note in notes]
     notes = "\n".join(notes)
 
-    prompt = f"""
-    You are an AI assistant being presented with a list of notes the I've written down throughout the day.
-    Not all notes are related. Take those notes and generate an interesting title for the day.
-
-    Notes:
-    {notes}
-    
-    Title:
-    """
-
-    logger.info(f"Sending prompt to GPT-3: {prompt}")
-    # Create a GPT-3 session
-    gpt3_session = openai.Completion.create(
-        engine="text-davinci-003",
-        prompt=prompt,
-        temperature=0.8,
-        max_tokens=1000,
-        n=1,
+    gpt3_session = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {
+                "role": "system",
+                "content": """You are an AI assistant being presented with a list of notes the I've written down throughout the day. Not all notes are related. Take those notes and generate an interesting title for the day. Respond only with the title not in quotes.""",
+            },
+            {"role": "user", "content": f"Notes:\n{notes}"},
+        ],
     )
 
     # Generate a response to the user-provided message
-    response = gpt3_session.choices[0].text.strip()  # type: ignore
+    response = gpt3_session.choices[0].message.content.strip()  # type: ignore
 
     # Process response
     logger.info(f"Got response from GPT-3: {response}")
     return response
+
+
+if __name__ == "__main__":
+    notes = [
+        "I had a great day today",
+        "Went ice skating with my friends",
+    ]
+    print(generate_summary(notes))
