@@ -4,11 +4,15 @@ load_dotenv()
 
 import os
 import db
-
-import requests
+import io
 
 import flask
 import telebot
+import openai
+
+from pydub import AudioSegment
+
+openai.api_key = os.environ["OPENAI_API_KEY"]
 
 from logging import getLogger
 
@@ -103,23 +107,27 @@ def save_message(message):
 @bot.message_handler(content_types=["voice"])
 def transcribe(message):
     file_id = message.voice.file_id
-    logger.info(f"Received voice message with file_id: {file_id}")
-    transcription = requests.get(
-        "https://jxnl--telegram-transcribe.modal.run/", params={"file_id": file_id}
+    # download file to local storage as temp file
+    file_info = bot.get_file(file_id)
+    logger.info(f"Downloading file {file_info.file_path}")
+    audiodata = bot.download_file(file_info.file_path)
+
+    AudioSegment.from_file(io.BytesIO(audiodata), format="ogg").export(
+        "whisper-sample.wav", format="wav"
     )
 
-    if transcription.status_code == 200:
-        transcription = transcription.json()
+    with open("whisper-sample.wav", "rb") as f:
+        transcription = openai.Audio.transcribe("whisper-1", f)
+        bot.reply_to(message, transcription["text"])
 
-        logger.info("Transcription successful {transcription}")
-
-    bot.reply_to(message, transcription["text"])
+    # clean up files
+    os.remove("whisper-sample.wav")
 
 
 if __name__ == "__main__":
     from loguru import logger
 
-    polling = False
+    polling = True
 
     logger.info("Starting bot")
     bot.remove_webhook()
