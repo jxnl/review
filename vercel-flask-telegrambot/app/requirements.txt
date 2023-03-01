@@ -3,5 +3,3 @@ python-dotenv
 pyTelegramBotAPI
 pymysql
 openai>=0.27.0
-pydub
-ffprobe

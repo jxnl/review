@@ -133,3 +133,4 @@ app/*
 langchain-sandbox/
 bjj_gpt/data/*
 .DS_Store
+bjj_gpt/transcripts/

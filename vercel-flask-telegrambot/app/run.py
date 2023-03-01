@@ -104,26 +104,6 @@ def save_message(message):
         bot.reply_to(message, f"Error creating summary {e}")
 
 
-@bot.message_handler(content_types=["voice"])
-def transcribe(message):
-    file_id = message.voice.file_id
-    # download file to local storage as temp file
-    file_info = bot.get_file(file_id)
-    logger.info(f"Downloading file {file_info.file_path}")
-    audiodata = bot.download_file(file_info.file_path)
-
-    AudioSegment.from_file(io.BytesIO(audiodata), format="ogg").export(
-        "whisper-sample.wav", format="wav"
-    )
-
-    with open("whisper-sample.wav", "rb") as f:
-        transcription = openai.Audio.transcribe("whisper-1", f)
-        bot.reply_to(message, transcription["text"])
-
-    # clean up files
-    os.remove("whisper-sample.wav")
-
-
 if __name__ == "__main__":
     from loguru import logger
 
