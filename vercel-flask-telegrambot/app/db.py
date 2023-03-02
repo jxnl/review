@@ -41,7 +41,7 @@ CREATE TABLE `summaries` (
 """
 
 
-def make_summary(telegram_user_id, date=None):
+def make_summary(telegram_user_id, date=None) -> tuple[str, str, list[int]]:
     if date is None:
         date = "DATE(NOW())"
     else:
@@ -64,7 +64,8 @@ def make_summary(telegram_user_id, date=None):
         ids = [note[0] for note in notes_objs]
         msgs = [note[1] for note in notes_objs]
     summary = gpt.generate_summary(msgs)
-    return summary, ids
+    followup = gpt.generate_followup(msgs)
+    return summary, followup, ids
 
 
 def save_summary(telegram_user_id, summary, ids, date=None):

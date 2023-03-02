@@ -81,9 +81,9 @@ def send_summary(message):
     date = message.text.split(" ")[1]
 
     try:
-        summary_str, ids = db.make_summary(user_id, date)
+        summary_str, _, ids = db.make_summary(user_id, date)
         summary_id, ids = db.save_summary(user_id, summary_str, ids, date)
-        bot.reply_to(message, f"Saved summary {summary_id} to database for notes {ids}")
+        logger.info(f"Saved summary {summary_id} to database for notes {ids}")
         bot.reply_to(message, summary_str)
     except Exception as e:
         logger.error(e)
@@ -98,11 +98,11 @@ def save_message(message):
     message_id = db.save_note(
         telegram_user_id=user_id, from_message_id=message_id, message_text=user_msg
     )
-    bot.reply_to(message, f"Saved message {message_id} to database.")
+    bot.reply_to(message, f"Saved message {message_id} to database")
     try:
-        summary_str, ids = db.make_summary(user_id)
-        summary_id, ids = db.save_summary(user_id, summary_str, ids)
-        bot.reply_to(message, f"Saved summary {summary_id} to database for notes {ids}")
+        summary_str, followup_str, ids = db.make_summary(user_id)
+        _, ids = db.save_summary(user_id, summary_str, ids)
+        bot.reply_to(message, followup_str)
     except Exception as e:
         logger.error(e)
         bot.reply_to(message, f"Error creating summary {e}")
