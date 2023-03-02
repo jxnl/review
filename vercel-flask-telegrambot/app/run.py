@@ -39,6 +39,12 @@ def webhook():
         flask.abort(403)
 
 
+@app.route("/reminder", methods=["GET"])
+def reminder():
+    bot.send_message(os.environ["CHAT_ID"], "Any updates?")
+    return {"status": "ok"}
+
+
 # Handle '/start' and '/help'
 @bot.message_handler(commands=["help", "start"])
 def send_welcome(message):
@@ -105,7 +111,7 @@ def save_message(message):
 if __name__ == "__main__":
     from loguru import logger
 
-    polling = True
+    polling = False
 
     logger.info("Starting bot")
     bot.remove_webhook()
