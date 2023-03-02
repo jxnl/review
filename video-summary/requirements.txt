@@ -1,4 +1,0 @@
-fastapi
-openai
-youtube-transcript-api
-uvicorn
