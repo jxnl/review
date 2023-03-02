@@ -10,8 +10,6 @@ import flask
 import telebot
 import openai
 
-from pydub import AudioSegment
-
 openai.api_key = os.environ["OPENAI_API_KEY"]
 
 from logging import getLogger
