@@ -4,7 +4,6 @@ load_dotenv()
 
 import os
 import db
-import io
 
 import flask
 import telebot
@@ -20,6 +19,7 @@ app = flask.Flask(__name__)
 bot = telebot.TeleBot(os.environ["TELEGRAM_BOT_TOKEN"], threaded=False)
 
 ME = 5072074832
+TRANSCRIPTION_URL = os.environ["TRANSCRIPTION_URL"]
 
 
 @app.route("/")
@@ -90,13 +90,12 @@ def send_summary(message):
         bot.reply_to(message, f"Error creating summary {e}")
 
 
-@bot.message_handler(func=lambda message: True, content_types=["text"])
-def save_message(message):
+def handle_message(message, message_text):
     user_id = message.from_user.id
     message_id = message.message_id
-    user_msg = message.text
+
     message_id = db.save_note(
-        telegram_user_id=user_id, from_message_id=message_id, message_text=user_msg
+        telegram_user_id=user_id, from_message_id=message_id, message_text=message_text
     )
     bot.reply_to(message, f"Saved message {message_id} to database")
     try:
@@ -108,27 +107,34 @@ def save_message(message):
         bot.reply_to(message, f"Error creating summary {e}")
 
 
+@bot.message_handler(func=lambda message: True, content_types=["text"])
+def handle_text(message):
+    handle_message(message, message.text)
+
+
 @bot.message_handler(content_types=["voice"])
-def transcribe(message):
+def handle_voice(message):
     import requests
 
     file_id = message.voice.file_id
     logger.info(f"Received voice message with file_id: {file_id}")
 
-    transcription = requests.get(
-        "https://jxnl--telegram-transcribe.modal.run/", params={"file_id": file_id}
-    )
+    transcription = requests.get(TRANSCRIPTION_URL, params={"file_id": file_id})
 
     if transcription.status_code == 200:
         transcription = transcription.json()
         logger.info("Transcription successful {transcription}")
         bot.reply_to(message, transcription["text"])
+        handle_message(message, transcription["text"])
     else:
         logger.error(f"Transcription failed {transcription}")
         bot.reply_to(message, "Transcription failed")
 
 
 if __name__ == "__main__":
+    from dotenv import load_dotenv
+
+    load_dotenv()
     from loguru import logger
 
     polling = False
@@ -139,5 +145,5 @@ if __name__ == "__main__":
     if polling:
         bot.infinity_polling()
     else:
-        bot.set_webhook(url="https://telebot-nine-lemon.vercel.app/webhook")
+        bot.set_webhook(url=os.environ["WEBHOOK_URL"])
         logger.info("Set webhook")
