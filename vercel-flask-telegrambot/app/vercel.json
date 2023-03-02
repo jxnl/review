@@ -7,6 +7,6 @@
     ],
     "crons": [{
       "path": "/reminder",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 18 * * *"
     }]
 }
