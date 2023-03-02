@@ -108,6 +108,26 @@ def save_message(message):
         bot.reply_to(message, f"Error creating summary {e}")
 
 
+@bot.message_handler(content_types=["voice"])
+def transcribe(message):
+    import requests
+
+    file_id = message.voice.file_id
+    logger.info(f"Received voice message with file_id: {file_id}")
+
+    transcription = requests.get(
+        "https://jxnl--telegram-transcribe.modal.run/", params={"file_id": file_id}
+    )
+
+    if transcription.status_code == 200:
+        transcription = transcription.json()
+        logger.info("Transcription successful {transcription}")
+        bot.reply_to(message, transcription["text"])
+    else:
+        logger.error(f"Transcription failed {transcription}")
+        bot.reply_to(message, "Transcription failed")
+
+
 if __name__ == "__main__":
     from loguru import logger
 
