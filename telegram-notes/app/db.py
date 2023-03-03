@@ -58,6 +58,7 @@ def make_summary(telegram_user_id, date=None) -> tuple[str, str, list[int]]:
         WHERE 
             telegram_user_id = {telegram_user_id}
             AND DATE(created_at) = {date}
+        ORDER BY date DESC
         """
         cursor.execute(sql)
         notes_objs = cursor.fetchall()
