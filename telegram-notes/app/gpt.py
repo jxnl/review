@@ -49,7 +49,7 @@ def generate_followup(notes: List[str]) -> str:
     You job is to help them explore their thoughts and feelings by suggesting them expand on their notes.
     The notes are just for the day, don't suggest topics that are unrelated to the day or too general.
 
-    Response and try 1-2 thoughtful questions help the client explore their thoughts.
+    Response and try 1-2 thoughtful questions help the client expand their writing.
     Something along the lines of 'Consider writing more about...' or 'What else happened?'
     """.strip()
 
