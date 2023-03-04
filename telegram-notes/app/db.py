@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -8,16 +9,14 @@ import pymysql.cursors
 import os
 import gpt
 
-from logging import getLogger
-
-logger = getLogger(__name__)
+from loguru import logger
 
 
 connection = pymysql.connect(
-    host=os.getenv("HOST"),
-    user=os.getenv("USERNAME"),
-    passwd=os.getenv("PASSWORD"),
-    db=os.getenv("DATABASE"),
+    host=os.getenv("PLANETSCALE_DB_HOST"),
+    user=os.getenv("PLANETSCALE_DB_USERNAME"),
+    passwd=os.getenv("PLANETSCALE_DB_PASSWORD"),
+    db=os.getenv("PLANETSCALE_DB_DATABASE"),
     ssl={"ca": os.getenv("PLANETSCALE_SSL_CERT_PATH")},
 )
 
@@ -27,6 +26,7 @@ CREATE TABLE `notes` (
 	`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP(),
 	`telegram_user_id` bigint,
 	`msg` text NOT NULL,
+    `is_user` boolean NOT NULL DEFAULT 1,
 	`processed_msg` text,
 	PRIMARY KEY (`id`)
 ) ENGINE InnoDB,
@@ -41,37 +41,64 @@ CREATE TABLE `summaries` (
 """
 
 
+@dataclass
+class Note:
+    id: int
+    msg: str
+    is_user: bool
+
+
 def make_summary(telegram_user_id, date=None) -> tuple[str, str, list[int]]:
     if date is None:
         date = "DATE(NOW())"
     else:
         date = f"'{date}'"
 
-    logger.info(f"Make summary for {telegram_user_id} on {date}")
+    logger.info(f"Make summary and follow up for {telegram_user_id} on {date}")
 
     with connection.cursor() as cursor:
         sql = f"""
         SELECT 
-            id, msg
+            id, msg, is_user
         FROM 
             notes 
         WHERE 
             telegram_user_id = {telegram_user_id}
             AND DATE(created_at) = {date}
-        ORDER BY 1 DESC
+        ORDER BY 1
         """
         cursor.execute(sql)
         notes_objs = cursor.fetchall()
-        ids = [note[0] for note in notes_objs]
-        msgs = [note[1] for note in notes_objs]
-    summary = gpt.generate_summary(msgs)
-    followup = gpt.generate_followup(msgs)
-    return summary, followup, ids
+        notes = [Note(*note) for note in notes_objs]
+    summary = gpt.generate_summary(notes)
+    followup = gpt.generate_followup(notes)
+
+    save_followup(telegram_user_id, followup)
+    save_summary(telegram_user_id, summary, [n.id for n in notes])
+
+    return followup
+
+
+def save_followup(telegram_user_id, followup):
+    followup = followup.replace("'", "\\'")
+    logger.info(f"saving followup {telegram_user_id}: {followup}")
+    with connection.cursor() as cursor:
+        # save the followup note to the database
+        sql = f"""
+        INSERT INTO notes 
+            (telegram_user_id, msg, is_user)
+        VALUES
+            ({telegram_user_id}, '{followup}', 0)
+        """
+        cursor.execute(sql)
+        logger.info(f"Saved followup note for {telegram_user_id} ")
 
 
 def save_summary(telegram_user_id, summary, ids, date=None):
     # check if there is already a summary for this user on this day
 
+    # sanitize input
+    summary = summary.replace("'", "\\'")
     if date is None:
         date = "DATE(NOW())"
     else:
@@ -136,7 +163,6 @@ def save_note(telegram_user_id, from_message_id, message_text, processed_msg=Non
     telegram_user_id = int(telegram_user_id)
     from_message_id = int(from_message_id)
     message_text = str(message_text)
-    processed_msg = str(processed_msg) if processed_msg else None
 
     # check if message_id already exsts
     with connection.cursor() as cursor:
@@ -148,10 +174,8 @@ def save_note(telegram_user_id, from_message_id, message_text, processed_msg=Non
         if note_id:
             logger.info(f"Message {note_id[0]} already exists in database")
         else:
-            sql = "INSERT INTO notes (telegram_user_id, message_id, msg, processed_msg) VALUES (%s, %s, %s, %s)"
-            cursor.execute(
-                sql, (telegram_user_id, from_message_id, message_text, processed_msg)
-            )
+            sql = "INSERT INTO notes (telegram_user_id, message_id, msg) VALUES (%s, %s, %s)"
+            cursor.execute(sql, (telegram_user_id, from_message_id, message_text))
             connection.commit()
             logger.info(f"Saved message {from_message_id} to database")
             note_id = cursor.lastrowid

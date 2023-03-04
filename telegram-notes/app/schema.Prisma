@@ -14,12 +14,12 @@ model notes {
   id               Int        @id @default(autoincrement())
   created_at       DateTime   @default(now()) @db.Timestamp(0)
   msg              String     @db.Text
-  processed_msg    String?    @db.Text
   message_id       BigInt?
   summary_id       Int?
   telegram_user_id BigInt
+  is_user          Boolean    @default(true)
   summary          summaries? @relation(fields: [summary_id], references: [id])
-  
+
   @@index([summary_id])
 }
 
