@@ -11,9 +11,7 @@ import openai
 
 openai.api_key = os.environ["OPENAI_API_KEY"]
 
-from logging import getLogger
-
-logger = getLogger(__name__)
+from loguru import logger
 
 app = flask.Flask(__name__)
 bot = telebot.TeleBot(os.environ["TELEGRAM_BOT_TOKEN"], threaded=False)
@@ -52,10 +50,11 @@ def send_welcome(message):
     bot.reply_to(
         message,
         """
-        Welcome to the memo bot. 
-        
-        To save a message, use the command /memo followed by your message.
-        To delete a message, use the command /delete_memo followed by the message id.
+        Welcome to the my prototype for a journaling bot.
+
+        To start using the bot, send me a text message or record a voice message to get started.
+        I save your messages and use them to generate a overview of your day. 
+        I'll also do my best to help you expand on your thoughts and feelings.
         """,
     )
     logger.info("Welcome message sent")
@@ -97,13 +96,8 @@ def handle_message(message, message_text):
     message_id = db.save_note(
         telegram_user_id=user_id, from_message_id=message_id, message_text=message_text
     )
-    try:
-        summary_str, followup_str, ids = db.make_summary(user_id)
-        _, ids = db.save_summary(user_id, summary_str, ids)
-        bot.reply_to(message, followup_str)
-    except Exception as e:
-        logger.error(e)
-        bot.reply_to(message, f"Error creating summary {e}")
+    followup_str = db.make_summary(user_id)
+    bot.reply_to(message, followup_str)
 
 
 @bot.message_handler(func=lambda message: True, content_types=["text"])
