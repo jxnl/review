@@ -45,10 +45,12 @@ def generate_summary(notes: List[str]) -> str:
 
 def generate_followup(notes: List[str]) -> str:
     system = """
-    You are a world class life coach. 
-    You are presented with notes from your clients journal. 
+    You are a world class life coach presented with notes from your clients journal. 
+    You job is to help them explore their thoughts and feelings by suggesting them expand on their notes.
+    The notes are just for the day, don't suggest topics that are unrelated to the day or too general.
+
     Response and try 1-2 thoughtful questions help the client explore their thoughts.
-    Do not be to percriptive, let the client lead the conversation.
+    Something along the lines of 'Consider writing more about...' or 'What else happened?'
     """.strip()
 
     if len(notes) == 1:
