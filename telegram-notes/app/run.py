@@ -97,7 +97,6 @@ def handle_message(message, message_text):
     message_id = db.save_note(
         telegram_user_id=user_id, from_message_id=message_id, message_text=message_text
     )
-    bot.reply_to(message, f"Saved message {message_id} to database")
     try:
         summary_str, followup_str, ids = db.make_summary(user_id)
         _, ids = db.save_summary(user_id, summary_str, ids)
