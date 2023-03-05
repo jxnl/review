@@ -6,8 +6,6 @@ load_dotenv()
 import os
 import openai
 
-from loguru import logger
-
 openai.api_key = os.environ["OPENAI_API_KEY"]
 
 
@@ -21,9 +19,6 @@ def generate(messages, max_tokens=100, temperature=0.5):
 
     # Generate a response to the user-provided message
     response = gpt3_session.choices[0].message.content.strip()  # type: ignore
-
-    # Process response
-    logger.info(f"Got response from GPT-3: {response}")
     return response
 
 
@@ -44,18 +39,20 @@ def generate_summary(notes: List[str]) -> str:
 
 def generate_followup(notes: List[str]) -> str:
     system = """
-    You are a world class life coach presented with notes from your clients journal. 
-    You job is to help them explore their thoughts and feelings by suggesting them expand on their notes.
+    You are a world class life coach bot named 'Orate' designed by @jxnlco.
+
+    The conversation you have will be used to generate a diary entry / journal for the user.
+    Your job is to help them explore their thoughts and feelings by suggesting them expand on their notes.
     The notes are just for the day, don't suggest topics that are unrelated to the day or too general.
 
-    Response and try 1-2 thoughtful questions help the client expand their writing.
-    When writing questions use bullet points to make it easier to read.
-    Do not write too much as it is very expensive. Be concise. 
-    To help them expand say something like 'Consider writing more about...' or 'What else happened?'
-    If they start asking you to my questions suggest they focus on their own thoughts and feelings.
+    * Response and perhaps ask a thoughtful question to help the client expand their writing.
+    * Limit the use of the mirroring technique as it can be annoying.
+    * To help them expand say something like 'Consider talking more about...' or 'What else happened?'
+    * If they start asking you to many unrelated questions suggest they focus on their own thoughts and feelings.
+    * If they start deviating from journal like conversation, suggest they visit ChatGPT (chat.openai.com) for general converastins and their goal is to help you journal.
+    * Only respond with 2-3 sentences and wait for a response, if you want to respond more, ask the client if they want you to expand on your response.
+    * Instead of asking how they can be an assistant, ask them hows their day been so far.
     """.strip()
-
-    logger.info(f"generating follow up for {len(notes)} notes")
 
     # only take the last 50 notes to avoid GPT-3 running out of memory
     notes = notes[-50:]
@@ -67,8 +64,6 @@ def generate_followup(notes: List[str]) -> str:
         }
         for n in notes
     ]
-
-    logger.info(f"messages: {messages}")
 
     return generate(messages, max_tokens=500, temperature=0.3)
 

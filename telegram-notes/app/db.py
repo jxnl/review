@@ -49,12 +49,11 @@ class Note:
 
 
 def make_summary(telegram_user_id, date=None) -> tuple[str, str, list[int]]:
+    logger.info(f"Making summary for {telegram_user_id} on {date}")
     if date is None:
         date = "DATE(NOW())"
     else:
         date = f"'{date}'"
-
-    logger.info(f"Make summary and follow up for {telegram_user_id} on {date}")
 
     with connection.cursor() as cursor:
         sql = f"""
@@ -70,7 +69,10 @@ def make_summary(telegram_user_id, date=None) -> tuple[str, str, list[int]]:
         cursor.execute(sql)
         notes_objs = cursor.fetchall()
         notes = [Note(*note) for note in notes_objs]
+
+    logger.info(f"Generating summary for {telegram_user_id} on {date}")
     summary = gpt.generate_summary(notes)
+    logger.info(f"Generating response for {telegram_user_id} on {date}")
     followup = gpt.generate_followup(notes)
 
     save_followup(telegram_user_id, followup)
@@ -81,7 +83,6 @@ def make_summary(telegram_user_id, date=None) -> tuple[str, str, list[int]]:
 
 def save_followup(telegram_user_id, followup):
     followup = followup.replace("'", "\\'")
-    logger.info(f"saving followup {telegram_user_id}: {followup}")
     with connection.cursor() as cursor:
         # save the followup note to the database
         sql = f"""
@@ -116,10 +117,6 @@ def save_summary(telegram_user_id, summary, ids, date=None):
         """
         cursor.execute(sql)
         summary_id = cursor.fetchone()  # returns a tuple or None if there is no summary
-
-        logger.info(
-            f"summary_id: {summary_id} found for {telegram_user_id} on {datetime.date.today()}"
-        )
 
         if summary_id is not None:
             # sanitize input
@@ -172,15 +169,13 @@ def save_note(telegram_user_id, from_message_id, message_text, processed_msg=Non
 
         # if it does not exist then save it
         if note_id:
-            logger.info(f"Message {note_id[0]} already exists in database")
+            logger.warning(f"Message {note_id[0]} already exists in database")
         else:
             sql = "INSERT INTO notes (telegram_user_id, message_id, msg) VALUES (%s, %s, %s)"
             cursor.execute(sql, (telegram_user_id, from_message_id, message_text))
             connection.commit()
-            logger.info(f"Saved message {from_message_id} to database")
             note_id = cursor.lastrowid
-
-    logger.info(f"Saved note {note_id} to database")
+            logger.info(f"Saved message {from_message_id} to database")
     return note_id
 
 
