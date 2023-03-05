@@ -44,20 +44,35 @@ def reminder():
 
 
 # Handle '/start' and '/help'
-@bot.message_handler(commands=["help", "start"])
+@bot.message_handler(commands=["start"])
 def send_welcome(message):
     logger.info(f"Welcome message to {message.from_user.first_name}")
     bot.reply_to(
         message,
-        """
-        Welcome to the my prototype for a journaling bot.
-
-        To start using the bot, send me a text message or record a voice message to get started.
-        I save your messages and use them to generate a overview of your day. 
-        I'll also do my best to help you expand on your thoughts and feelings.
-        """,
+        "Welcome back to jrnl, your trusted life coach bot. I'm here to help you reflect on your experiences and emotions, and provide guidance to help you achieve your goals. Whether you're feeling happy, sad, or anything in between, I'm here to listen and support you. Let's continue on this journey together! say `/help` for more info.",
     )
     logger.info("Welcome message sent")
+
+
+@bot.message_handler(commands=["help"])
+def send_help(message):
+    bot.reply_to(
+        message,
+        """ *Commands:*
+        * `/start` - Start the bot
+        * `/help` - Show this message
+        * `/feedback <message>` - Send feedback to the developer
+        """,
+    )
+
+
+@bot.message_handler(commands=["feedback"])
+def send_feedback(message):
+    user_id = message.from_user.id
+    feedback = message.text.split(" ", 1)[1]
+    logger.info(f"Feedback from {user_id}: {feedback}")
+    bot.send_message(ME, f"{user_id}: {feedback}")
+    bot.reply_to(message, "Feedback sent")
 
 
 # Handle '/delete_memo'
@@ -130,7 +145,7 @@ if __name__ == "__main__":
     load_dotenv()
     from loguru import logger
 
-    polling = False
+    polling = True
 
     logger.info("Starting bot")
     bot.remove_webhook()
