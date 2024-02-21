@@ -13,6 +13,8 @@ from rich.console import Console
 
 console = Console()
 
+transcript_console = Console()
+
 
 def merge_strings_with_overlap(sentences):
     if not sentences:
@@ -54,8 +56,11 @@ def main():
                 return
             buffer.append(sentence)
 
-            buffer_str = merge_strings_with_overlap(buffer)
-            console.print(f"Sentence: {buffer_str}")
+            console.clear()
+            global app
+            sentence = merge_strings_with_overlap(buffer[-1:-40:-1][::-1])
+            console.print(app)
+            console.print(f"Buffer: {sentence}")
 
         def on_metadata(self, metadata, **kwargs):
             # print(f"\n\n{metadata}\n\n")
@@ -67,13 +72,10 @@ def main():
         def on_utterance_end(self, utterance_end, **kwargs):
             global app
 
-            buffer_str = merge_strings_with_overlap(buffer)
+            buffer_str = merge_strings_with_overlap(
+                buffer[-1:-5:-1][::-1]
+            )  # get the last 10 sentences
             app.add_transcript(transcript=buffer_str)
-
-            console.clear()
-            console.print(f"Last utterance: {buffer_str}")
-            console.print(app)
-            buffer.clear()
 
         def on_error(self, error, **kwargs):
             # print(f"\n\n{error}\n\n")

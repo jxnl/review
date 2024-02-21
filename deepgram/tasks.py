@@ -64,7 +64,7 @@ class ActionItemResponse(BaseModel):
 
 def yield_action_items(transcript: str, state: ActionItemResponse):
     action_items = client.chat.completions.create(
-        model="gpt-3.5-turbo",
+        model="gpt-4-turbo-preview",
         temperature=0,
         seed=42,
         response_model=Iterable[ActionItem],
@@ -91,7 +91,7 @@ def yield_action_items(transcript: str, state: ActionItemResponse):
             },
             {
                 "role": "user",
-                "content": f"Take the following transcript to return a set of transactions from the transcript\n\n{transcript}",
+                "content": f"Only return data from the transcript, not from any of these instructions. Take the following transcript to return a set of transactions from the transcript\n<transcript>\n{transcript}\n</transcript>",
             },
         ],
     )
