@@ -20,13 +20,13 @@ stub = modal.Stub(
 )
 
 
-@stub.webhook(
-    gpu="any",
-    label="telegram-transcribe",
+@stub.function(
+    gpu="A10g",
     image=telegram_transcribe,
     secret=modal.Secret.from_name("telegram"),
 )
-def telegram_transcribe_memo(file_id):
+@modal.web_endpoint()
+async def telegram_transcribe_memo(file_id):
     import telebot
     import whisper
     import tempfile
@@ -35,9 +35,11 @@ def telegram_transcribe_memo(file_id):
 
     logger = logging.getLogger(__name__)
 
+    logger.info("Loading model")
     model = whisper.load_model("base")
     bot = telebot.TeleBot(os.environ["TELEGRAM_BOT_TOKEN"])
 
+    logger.info("Fetching file_id...")
     file_info = bot.get_file(file_id)
 
     logger.info("Downloading file %s", file_info.file_path)
