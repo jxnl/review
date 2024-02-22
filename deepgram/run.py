@@ -7,37 +7,15 @@ from deepgram import (
     LiveOptions,
     Microphone,
 )
+from langsmith import traceable
 
 from tasks import Application
 from rich.console import Console
 
 console = Console()
 
-transcript_console = Console()
 
-
-def merge_strings_with_overlap(sentences):
-    if not sentences:
-        return ""
-
-    def find_overlap(a, b):
-        """
-        Find the maximum length of the overlapping part between the end of string a and the start of string b.
-        """
-        max_overlap_len = min(len(a), len(b))
-        for i in range(max_overlap_len, 0, -1):
-            if a.endswith(b[:i]):
-                return i
-        return 0
-
-    merged = sentences[0]  # Start with the first sentence
-    for next_sentence in sentences[1:]:
-        overlap_len = find_overlap(merged, next_sentence)
-        merged += " "  # Add a space between sentences
-        merged += next_sentence[overlap_len:]  # Append non-overlapping part
-    return merged
-
-
+@traceable(name="main")
 def main():
     try:
         deepgram: DeepgramClient = DeepgramClient()
@@ -52,15 +30,15 @@ def main():
 
         def on_message(self, result, **kwargs):
             sentence = result.channel.alternatives[0].transcript
-            if len(sentence) == 0:
-                return
-            buffer.append(sentence)
+
+            if result.speech_final:
+                if len(sentence) == 0:
+                    return
+                buffer.append(sentence)
 
             console.clear()
-            global app
-            sentence = merge_strings_with_overlap(buffer[-1:-40:-1][::-1])
+            console.print(f"Listening...: {sentence}")
             console.print(app)
-            console.print(f"Buffer: {sentence}")
 
         def on_metadata(self, metadata, **kwargs):
             # print(f"\n\n{metadata}\n\n")
@@ -72,10 +50,13 @@ def main():
         def on_utterance_end(self, utterance_end, **kwargs):
             global app
 
-            buffer_str = merge_strings_with_overlap(
-                buffer[-1:-5:-1][::-1]
-            )  # get the last 10 sentences
-            app.add_transcript(transcript=buffer_str)
+            # get the last n sentences, in reverse order
+            # n = 5, then add them to the transcript
+            buffer_str = " ".join(buffer[:-5:-1][::-1])
+            for update in app.add_transcript(transcript=buffer_str):
+                console.clear()
+                console.print(f"Sent: {buffer_str}")
+                console.print(update)
 
         def on_error(self, error, **kwargs):
             # print(f"\n\n{error}\n\n")

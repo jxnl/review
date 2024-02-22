@@ -19,10 +19,6 @@ class ActionItem(BaseModel):
     is_completed: Optional[bool] = Field(
         False, description="Whether the action item is completed"
     )
-    last_updated: Optional[str] = Field(
-        default_factory=time.now().isoformat,
-        description="Leave this null if you are an LLM, The date the action item was last updated",
-    )
 
 
 class ActionItemResponse(BaseModel):
@@ -46,14 +42,12 @@ class ActionItemResponse(BaseModel):
         )
         table.add_column("Status")
         table.add_column("Title")
-        table.add_column("Last Updated")
         table.add_column("Chain of Thought")
 
         for item in self.action_items:
             table.add_row(
                 "✅" if item.is_completed else "❌",
                 item.title,
-                str(item.last_updated),
                 item.chain_of_thought,
             )
         yield table
@@ -64,7 +58,7 @@ class ActionItemResponse(BaseModel):
 
 def yield_action_items(transcript: str, state: ActionItemResponse):
     action_items = client.chat.completions.create(
-        model="gpt-4-turbo-preview",
+        model="gpt-4",
         temperature=0,
         seed=42,
         response_model=Iterable[ActionItem],
@@ -108,6 +102,7 @@ class Application:
     def add_transcript(self, transcript: str):
         for new_state in yield_action_items(transcript, self.state):
             self.state = new_state
+            yield self
 
     def __rich_console__(self, console: Console, options: dict):
         return self.state.__rich_console__(console, options)
