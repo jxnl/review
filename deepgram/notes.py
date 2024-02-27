@@ -65,10 +65,6 @@ class Note(BaseModel):
         default=None,
         description="the body of the note, should be short",
     )
-    source_ids: List[int] = Field(
-        default_factory=list,
-        description="The source ids that the note was generated from.",
-    )
 
 
 class NewNotes(BaseModel):

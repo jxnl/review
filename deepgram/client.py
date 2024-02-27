@@ -42,7 +42,7 @@ class LiveNotes:
     def update(self):
         context = self.get_context()
         context_str = "\n".join([line for _, line in context])
-        for state in self.app.add_transcript(transcript=context_str):
+        for state in self.app.yield_partial_state(transcript=context_str):
             self.console.clear()
             self.console.print(state)
         self.last_index = max([i for i, _ in context])
