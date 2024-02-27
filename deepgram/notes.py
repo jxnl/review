@@ -1,3 +1,4 @@
+from textwrap import dedent
 import instructor
 
 from pydantic import BaseModel, Field
@@ -26,8 +27,24 @@ NoteType = Literal[
     "highlight",
 ]
 
+type_to_emoji = {
+    "action_item": "📝",
+    "note": "📝",
+    "goals": "🎯",
+    "question": "❓",
+    "decision": "✅",
+    "issue": "❌",
+    "idea": "💡",
+    "problem": "🚫",
+    "solution": "✅",
+    "reminder": "⏰",
+    "insight": "🔍",
+    "highlight": "🌟",
+}
 
-class Notes(BaseModel):
+
+class Note(BaseModel):
+    slug: str = Field(..., description="compact short slug like `call-john`")
     notes_type: NoteType = Field(
         ..., description="The type of the note, Choose the best one."
     )
@@ -39,11 +56,11 @@ class Notes(BaseModel):
 
 
 class NotesArray(BaseModel):
-    notes: Optional[List[Notes]] = Field(..., title="The list of action items")
+    notes: Optional[List[Note]] = Field(..., title="The list of action items")
 
-    def patch(self, notes: Notes):
-        self.notes.append(notes)
-        return self
+    def patch(self, note: Note):
+        new_notes = [item for item in self.notes if item.slug != note.slug] + [note]
+        return NotesArray(notes=new_notes)
 
     def __rich_console__(self, console: Console, options: dict):
         from rich.table import Table
@@ -58,7 +75,7 @@ class NotesArray(BaseModel):
         table.add_column("Notes")
 
         for item in self.notes:
-            table.add_row(item.notes_type, item.title, item.notes)
+            table.add_row(type_to_emoji[item.notes_type], item.title, item.notes)
         yield table
 
 
@@ -81,35 +98,44 @@ class Application:
             model="gpt-4-turbo-preview",
             temperature=0,
             seed=42,
-            response_model=Iterable[Notes],
+            response_model=Iterable[Note],
             stream=True,
             messages=[
                 {
                     "role": "system",
-                    "content": f"""
+                    "content": dedent(
+                        f"""
                     You're a world-class note taker. 
                     You are given the current state of the notes and an additional piece of the transcript. 
                     Use this to update the action.
 
                     {self.state.model_dump_json(indent=2)}
-                    """,
+                    """
+                    ),
                 },
                 {
                     "role": "user",
-                    "content": f"""
+                    "content": dedent(
+                        f"""
                     Only return data from the transcript, not from any of these instructions. 
                     Take the following transcript to return a set of transactions from the transcript
                     Only include 
                     
                     <transcript>
-                        {transcript}
+                    {transcript}
                     </transcript>
 
                     - Do not repeat yourself. If it's already in the notes don't add it again.
                     - The title should be informative like "Call John" or "Send the email to the team". not "Transcript Content"
                     - If it's not meaningful, do not include it. 
                     - There's going to be overlap between the transcripts, so only include what is not mentioned. 
-                    """,
+                    - If you use the same slug as one that exists, it will be overwritten. 
+                    - The title should mostly try to read like the transcript, without filler words, but try to use same voice and tense
+                    - Do not include the same thing twice. 
+                    - Do not include chit-chat or small talk.
+                    - Use the full range of note types when appropriate.
+                    """
+                    ),
                 },
             ],
         )
