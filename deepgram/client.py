@@ -20,28 +20,45 @@ class LiveNotes:
     full transcript. On udpate, the buffer is added to the transcript, and the buffer is cleared. until the last n messages
     """
 
-    def __init__(self):
+    def __init__(self, min_chars_per_update:int, use_previous_n_lines:int):
         self.transcript = []
         self.deepgram = DeepgramClient()
         self.app = Application()
         self.console = Console()
         self.last_index = 0
         self.n_lines = 0
+        self.min_chars_per_update = min_chars_per_update
+        self.use_previous_n_lines = use_previous_n_lines
 
-    def get_context(self, n=5):
+    def get_context(self, n=2):
         """
         return the transcripts since the last index
         """
         start = max(0, self.last_index - n)
         return self.transcript[start:]
+    
 
     def add_transcript(self, transcript: str):
         self.transcript.append((self.n_lines, transcript))
         self.n_lines += 1
 
     def update(self):
-        context = self.get_context()
+        """ 
+        Update the notes with the last n lines of the transcript. If the context string is very short don't update the notes
+        This is a cost saving measure to avoid updating the notes too frequently and to avoid updating the notes with very short context strings    
+        This is an issue when we have short phrases in conversations that go back and forth
+        """
+
+        # Pull only the diff since the last update
+        # if the context string is very short don't update the notes
+        latest_thread = "\n".join([line for (_, line) in self.get_context(n=0)])
+        if len(latest_thread) < self.min_chars_per_update:
+            return 
+        
+        # update actually includes the last n line plus 3 more lines from the past as context
+        context = self.get_context(n=self.use_previous_n_lines)
         context_str = "\n".join([line for _, line in context])
+
         for state in self.app.yield_partial_state(transcript=context_str):
             self.console.clear()
             self.console.print(state)

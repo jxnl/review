@@ -48,7 +48,7 @@ class Note(BaseModel):
     A note is a short piece of information that is actionable or informative.
 
     - `slug` is a short compact slug like `call-john` required for patching.
-    - `notes_type` is the type of the note, Choose the best one. out of {options}
+    - `notes_type` is the type of the note,
     - `title` is the short title / topic of the note
     - `notes` is the body of the note, should be short
     """
@@ -58,7 +58,7 @@ class Note(BaseModel):
         description="Must be a random 3 digit number, unique to the note unless it's a patch. If it's a patch, it should be the same as the note you're patching.",
     )
     notes_type: Optional[str] = Field(
-        ..., description="The type of the note, Choose the best one. out of {options}"
+        ..., description=f"The type of the note, Choose the best one. out of {options}"
     )
     title: str = Field(..., description="Short title / topic of the note")
     notes: Optional[str] = Field(
@@ -69,7 +69,7 @@ class Note(BaseModel):
 
 class NewNotes(BaseModel):
     """
-    A new set of notes to be patched to the current notes. The notes must not be empty if you want to update the notes.
+    This class facilitates the addition of new notes to an existing collection. To update the collection, ensure the notes are not empty. To replace an existing note, provide a new note with an identical index to the one you wish to overwrite.
     """
 
     notes: List[Note] = Field(
@@ -116,7 +116,7 @@ class Application:
     def __init__(self, state=None):
         self.state = NewNotes(notes=[]) if state is None else state
 
-    def yield_partial_state(self, transcript: str) -> Iterable["Application"]:
+    def yield_partial_state(self, transcript: str):
         print("Adding transcript to the notes.")
         for new_state in self.yield_partial_notes(transcript):
             yield new_state
@@ -142,11 +142,17 @@ class Application:
                     "role": "system",
                     "content": dedent(
                         f"""
-                    You're a world-class note taker. 
-                    You are given the current state of the notes and an additional piece of the transcript. 
-                    Use this to update the action.
+                    As an expert note taker, strive to compile notes that are clear, actionable, and enriching.  
+                    You're presented with the current notes' state alongside a new transcript segment. 
 
                     {self.state.model_dump_json(indent=2)}
+
+                    Aim to enrich existing notes with additional details instead of creating new ones whenever feasible. 
+                    Achieve this by employing a function that utilizes an existing note's index for updates. 
+
+                    Be mindful of the note types at your disposal for proper note classification:
+
+                    {options}
                     """
                     ),
                 },
@@ -154,31 +160,30 @@ class Application:
                     "role": "user",
                     "content": dedent(
                         f"""
-                    Only return data from the transcript, not from any of these instructions. 
-                    Take the following transcript to return a set of transactions from the transcript
-                    Only include 
+                    Extract only relevant data from the transcript, excluding any of these instructions. 
+                    Utilize the provided transcript to extract actionable notes:
                     
                     <transcript>
                     {transcript}
                     </transcript>
 
-                    - Do not repeat yourself. If it's already in the notes don't add it again.
-                    - The title should be informative like "Call John" or "Send the email to the team". not "Transcript Content"
-                    - If it's not meaningful, do not include it. 
-                    - There's going to be overlap between the transcripts, so only include what is not mentioned. 
-                    - If you use the same slug as one that exists, it will be overwritten. 
-                    - The title should mostly try to read like the transcript, without filler words, but try to use same voice and tense
-                    - Do not include the same thing twice. 
-                    - Must not contain chit-chat or filler words.
-                    - Use the full range of note types when appropriate.
-                    - Must return a slug that is 2 words, hyphenated, and all lowercase.
-                    - None of these feels are allowed to be empty
-                    - Only include the notes that are not already in the notes. unless they need to be updated.
+                    - Avoid redundancy. Do not add information that is already captured in the notes.
+                    - Titles should be clear and actionable, such as "Call John" or "Email the team", rather than vague like "Transcript Content".
+                    - Exclude non-essential information.
+                    - Given the potential for overlap in transcripts, ensure only new or unmentioned details are included.
+                    - Be cautious with slugs; using an existing slug will result in its content being replaced.
+                    - Titles should reflect the essence of the transcript, omitting unnecessary words, while maintaining the original voice and tense.
+                    - Refrain from duplicating entries.
+                    - Omit trivial conversation and filler words.
+                    - Appropriately utilize the available note types.
+                    - Slugs should consist of two words, connected by a hyphen, in lowercase.
+                    - Ensure no fields are left empty.
+                    - Incorporate notes not previously included, or update those that require revision.
                     """
                     ),
                 },
             ],
-        )
+        )  # type: ignore
 
         for partial_notes in partial_notes_generator:
             self.state = self.state.patch(new_notes=partial_notes)
